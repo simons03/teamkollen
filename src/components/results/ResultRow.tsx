@@ -1,4 +1,4 @@
-import type { Question } from '../../config/questions'
+import { AGREE_LABELS, type Question } from '../../config/questions'
 import { scoreColor } from '../../lib/color'
 import type { QuestionStats } from '../../lib/results'
 import { DotScale } from './DotScale'
@@ -14,12 +14,19 @@ interface ResultRowProps {
 }
 
 export function ResultRow({ index, question, stats, view }: ResultRowProps) {
+  const labels = question.labels ?? AGREE_LABELS
+
   return (
     <li className="grid grid-cols-1 items-center gap-x-6 gap-y-1 border-b border-slate-100 px-5 py-4 last:border-b-0 md:grid-cols-[minmax(0,2fr)_minmax(0,4fr)_3.5rem] sm:px-6">
-      <p className="flex gap-3 font-medium text-slate-700">
-        <span className="shrink-0 tabular-nums text-slate-400">{index + 1}.</span>
-        {question.text}
-      </p>
+      <div className="flex gap-3">
+        <span className="shrink-0 font-medium tabular-nums text-slate-400">{index + 1}.</span>
+        <div>
+          <p className="font-medium text-slate-700">{question.text}</p>
+          <p className="mt-0.5 text-xs text-slate-400">
+            0 = {labels.low.toLowerCase()} · 100 = {labels.high.toLowerCase()}
+          </p>
+        </div>
+      </div>
 
       {stats ? (
         view === 'range' ? <RangeScale stats={stats} /> : <DotScale stats={stats} />

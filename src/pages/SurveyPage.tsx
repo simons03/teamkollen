@@ -62,7 +62,7 @@ export function SurveyPage() {
           </span>
         </div>
         <p className="mt-2 max-w-2xl text-slate-600">
-          Svara på frågorna genom att dra reglaget mellan 0 (mycket dåligt) och 100 (mycket bra).
+          Dra reglaget för varje påstående – rött betyder dåligt och grönt betyder bra.
           Undersökningen är helt anonym – vi sparar bara vilken sektion du tillhör och dina svar.
         </p>
       </header>
