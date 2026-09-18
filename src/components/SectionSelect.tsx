@@ -21,7 +21,7 @@ export function SectionSelect({ value, onChange }: SectionSelectProps) {
           – Välj sektion –
         </option>
         {SECTIONS.map((section) => (
-          <option key={section.id} value={section.id}>
+          <option key={section.id} value={section.id} disabled={section.disabled}>
             {section.name}
           </option>
         ))}
