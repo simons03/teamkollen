@@ -1,6 +1,7 @@
 import type { CSSProperties } from 'react'
 import { scoreColor } from '../../lib/color'
 import type { QuestionStats } from '../../lib/results'
+import { CompareMarker, type Comparison } from './CompareMarker'
 import styles from './ScoreScale.module.scss'
 
 const DOT_SIZE = 14
@@ -9,7 +10,7 @@ const STACK_STEP = 11
 const BIN_WIDTH = 2
 
 /** Visar varje enskilt svar som en prick ovanför skalan. */
-export function DotScale({ stats }: { stats: QuestionStats }) {
+export function DotScale({ stats, compare }: { stats: QuestionStats; compare?: Comparison }) {
   const bins = new Map<number, number>()
   const dots = [...stats.values]
     .sort((a, b) => a - b)
@@ -44,7 +45,7 @@ export function DotScale({ stats }: { stats: QuestionStats }) {
           </span>
         ))}
       </div>
-      <div className={`${styles.track} ${styles.trackThin}`} />
+      <div className={`${styles.track} ${styles.trackThin}`}>{compare && <CompareMarker {...compare} />}</div>
       <div className={styles.avgLine} style={{ left: `${stats.avg}%` }}>
         <span className={styles.avgLabel} style={{ left: '50%' }}>
           Snitt {Math.round(stats.avg)}

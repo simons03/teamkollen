@@ -1,23 +1,34 @@
 import { useEffect, useMemo, useState } from 'react'
+import { Delta } from '../components/results/Delta'
 import { ResultRow, type ResultView } from '../components/results/ResultRow'
 import { QUESTIONS } from '../config/questions'
 import { scoreColor } from '../lib/color'
+import { DEMO_MODE } from '../lib/demoData'
 import type { Answers } from '../lib/responses'
 import {
   computeStats,
   fetchAnswers,
   fetchSections,
+  fetchWeekAnswers,
   fetchWeeks,
+  overallAverage,
+  type QuestionStats,
   type SectionInfo,
   type WeekInfo,
 } from '../lib/results'
 import { getIsoWeek } from '../lib/week'
 
 const ALL_SECTIONS = ''
+const NO_COMPARE = ''
+/** Antal veckor som visas i trendvyn, inklusive vald vecka. */
+const TREND_WEEKS = 8
+
+type StatsMap = Record<string, QuestionStats>
 
 const VIEWS: { id: ResultView; label: string }[] = [
   { id: 'range', label: 'Spann' },
   { id: 'dots', label: 'Alla svar' },
+  { id: 'trend', label: 'Trend' },
 ]
 
 const selectClass =
@@ -30,6 +41,9 @@ export function ResultsPage() {
   const [sectionId, setSectionId] = useState(ALL_SECTIONS)
   const [loaded, setLoaded] = useState<{ key: string; list: Answers[] } | null>(null)
   const [view, setView] = useState<ResultView>('range')
+  const [compareWeekId, setCompareWeekId] = useState(NO_COMPARE)
+  const [compareLoaded, setCompareLoaded] = useState<{ key: string; stats: StatsMap } | null>(null)
+  const [trendLoaded, setTrendLoaded] = useState<{ key: string; series: StatsMap[] } | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   const handleError = (err: unknown) => {
@@ -81,31 +95,84 @@ export function ResultsPage() {
     }
   }, [weekId, sections.length, answersKey])
 
+  const sectionFilter = sectionId === ALL_SECTIONS ? null : sectionId
+
+  // Jämförelseveckan, för samma sektion (eller alla sektioner den veckan).
+  const compareKey = compareWeekId ? `${compareWeekId}|${sectionId}` : ''
+  const compareStats = compareKey && compareLoaded?.key === compareKey ? compareLoaded.stats : null
+
+  useEffect(() => {
+    if (!compareKey) return
+    let cancelled = false
+    fetchWeekAnswers(compareWeekId, sectionFilter)
+      .then((list) => !cancelled && setCompareLoaded({ key: compareKey, stats: computeStats(list) }))
+      .catch(handleError)
+    return () => {
+      cancelled = true
+    }
+  }, [compareKey, compareWeekId, sectionFilter])
+
+  // Trend: vald vecka och upp till sju veckor med svar före den, äldst först.
+  const trendWeeks = useMemo(() => {
+    const i = weeks?.findIndex((w) => w.id === weekId) ?? -1
+    return i < 0 ? [] : weeks!.slice(i, i + TREND_WEEKS).reverse()
+  }, [weeks, weekId])
+  const trendKey = view === 'trend' ? `${trendWeeks.map((w) => w.id).join(',')}|${sectionId}` : ''
+  const trendSeries = trendKey && trendLoaded?.key === trendKey ? trendLoaded.series : null
+
+  useEffect(() => {
+    if (!trendKey || trendWeeks.length === 0) return
+    let cancelled = false
+    Promise.all(trendWeeks.map((w) => fetchWeekAnswers(w.id, sectionFilter).then(computeStats)))
+      .then((series) => !cancelled && setTrendLoaded({ key: trendKey, series }))
+      .catch(handleError)
+    return () => {
+      cancelled = true
+    }
+  }, [trendKey, trendWeeks, sectionFilter])
+
   const stats = useMemo(() => computeStats(responses ?? []), [responses])
-  const overallAvg = useMemo(() => {
-    const all = Object.values(stats).flatMap((s) => s.values)
-    return all.length ? all.reduce((a, b) => a + b, 0) / all.length : null
-  }, [stats])
+  const overallAvg = useMemo(() => overallAverage(stats), [stats])
+  const compareOverallAvg = useMemo(() => (compareStats ? overallAverage(compareStats) : null), [compareStats])
 
   const selectedWeek = weeks?.find((w) => w.id === weekId)
-  const loading = weeks === null || (weeks.length > 0 && responses === null)
+  const compareWeek = weeks?.find((w) => w.id === compareWeekId)
+  const compareLabel = compareWeek ? `vecka ${compareWeek.week}` : ''
+  const loading =
+    weeks === null || (weeks.length > 0 && (responses === null || (view === 'trend' && trendSeries === null)))
+
+  // Jämförelsen är ett eget val och ligger kvar när veckan byts – utom om man väljer
+  // just den veckan, eftersom en vecka inte kan jämföras med sig själv.
+  const changeWeek = (id: string) => {
+    setWeekId(id)
+    if (id === compareWeekId) setCompareWeekId(NO_COMPARE)
+  }
 
   return (
     <>
       <header className="mb-8">
         <h1 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">Resultat</h1>
+        {DEMO_MODE && (
+          <p className="mt-3 inline-block rounded-md bg-amber-100 px-2.5 py-1 text-sm font-medium text-amber-800">
+            Demoläge – påhittad data, inget hämtas från Firestore.{' '}
+            <a href="?demo=0" className="underline">
+              Stäng av
+            </a>
+          </p>
+        )}
         <p className="mt-2 max-w-2xl text-slate-600">
-          Veckans svar per sektion. Välj att se spannet mellan lägsta och högsta svar, eller alla svar
-          som prickar på skalan.
+          Veckans svar per sektion. Se spannet mellan lägsta och högsta svar, alla svar som prickar
+          eller hur snittet har utvecklats vecka för vecka. Jämför med en tidigare vecka för att se
+          vad som har ändrats.
         </p>
       </header>
 
-      <div className="mb-6 grid gap-4 rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200 sm:grid-cols-[1fr_1fr_auto] sm:items-end sm:p-6">
+      <div className="mb-6 grid gap-4 rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200 sm:grid-cols-2 sm:items-end lg:grid-cols-[1fr_1fr_1fr_auto] sm:p-6">
         <label className="flex flex-col gap-1.5 text-sm font-medium text-slate-700">
           Vecka
           <select
             value={weekId}
-            onChange={(e) => setWeekId(e.target.value)}
+            onChange={(e) => changeWeek(e.target.value)}
             disabled={!weeks?.length}
             className={selectClass}
           >
@@ -131,6 +198,28 @@ export function ResultsPage() {
                 {s.name}
               </option>
             ))}
+          </select>
+        </label>
+
+        <label className="flex flex-col gap-1.5 text-sm font-medium text-slate-700">
+          Jämför med
+          <select
+            value={compareWeekId}
+            onChange={(e) => setCompareWeekId(e.target.value)}
+            disabled={!weeks || weeks.length < 2}
+            title={weeks?.length === 1 ? 'Det finns bara svar för en vecka än' : undefined}
+            className={selectClass}
+          >
+            <option value={NO_COMPARE}>
+              {weeks?.length === 1 ? 'Bara en vecka har svar' : 'Ingen jämförelse'}
+            </option>
+            {weeks
+              ?.filter((w) => w.id !== weekId)
+              .map((w) => (
+                <option key={w.id} value={w.id}>
+                  Vecka {w.week}, {w.year}
+                </option>
+              ))}
           </select>
         </label>
 
@@ -183,6 +272,15 @@ export function ResultsPage() {
                 <strong className="tabular-nums" style={{ color: scoreColor(overallAvg) }}>
                   {Math.round(overallAvg)}
                 </strong>
+                {compareOverallAvg !== null && (
+                  <Delta value={overallAvg} previous={compareOverallAvg} label={compareLabel} className="ml-1.5" />
+                )}
+              </span>
+            )}
+            {compareStats && view !== 'trend' && (
+              <span className="flex items-center gap-1.5 text-slate-500">
+                <span className="inline-block size-3 rounded-full border-2 border-dashed border-slate-500" />
+                Snitt {compareLabel}
               </span>
             )}
           </div>
@@ -195,6 +293,13 @@ export function ResultsPage() {
                 question={question}
                 stats={stats[question.id]}
                 view={view}
+                compare={
+                  compareStats?.[question.id] && { avg: compareStats[question.id].avg, label: compareLabel }
+                }
+                trend={trendSeries?.map((series, i) => ({
+                  label: `v${trendWeeks[i].week}`,
+                  avg: series[question.id]?.avg ?? null,
+                }))}
               />
             ))}
           </ol>

@@ -1,10 +1,11 @@
 import type { CSSProperties } from 'react'
 import { scoreColor } from '../../lib/color'
 import type { QuestionStats } from '../../lib/results'
+import { CompareMarker, type Comparison } from './CompareMarker'
 import styles from './ScoreScale.module.scss'
 
 /** Neutral bana där bara spannet min–max färgas, med snittet som en ring. */
-export function RangeScale({ stats }: { stats: QuestionStats }) {
+export function RangeScale({ stats, compare }: { stats: QuestionStats; compare?: Comparison }) {
   const { min, max, avg } = stats
   const labelsOverlap = max - min < 14
 
@@ -28,6 +29,7 @@ export function RangeScale({ stats }: { stats: QuestionStats }) {
           </>
         )}
 
+        {compare && <CompareMarker {...compare} />}
         <div
           className={styles.avgMarker}
           style={{ left: `${avg}%`, '--marker-color': scoreColor(avg) } as CSSProperties}
