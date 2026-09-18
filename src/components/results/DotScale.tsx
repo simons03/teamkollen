@@ -29,9 +29,19 @@ export function DotScale({ stats }: { stats: QuestionStats }) {
           <span
             key={i}
             className={styles.dot}
-            style={{ left: `${value}%`, bottom: stack * STACK_STEP, '--dot-color': scoreColor(value) } as CSSProperties}
-            title={String(value)}
-          />
+            style={
+              {
+                left: `${value}%`,
+                bottom: stack * STACK_STEP,
+                '--dot-color': scoreColor(value),
+                '--drop': `${stack * STACK_STEP}px`,
+              } as CSSProperties
+            }
+            tabIndex={0}
+            aria-label={`Svar: ${value}`}
+          >
+            <span className={styles.dotTip}>{value}</span>
+          </span>
         ))}
       </div>
       <div className={`${styles.track} ${styles.trackThin}`} />
