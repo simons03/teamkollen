@@ -6,7 +6,7 @@ service cloud.firestore {
     //   weeks/{2026-W38}/sections/{sektion-a}              { sectionId, name, year, week }
     //   weeks/{2026-W38}/sections/{sektion-a}/responses/…  { answers, createdAt }
     //
-    // Anonyma klienter får bara skriva. Ingen läsning, ändring av svar eller radering.
+    // Alla får läsa (resultatsidan) och skapa svar. Ingen får ändra svar eller radera.
 
     function validWeek(weekId, data) {
       return weekId.matches('^[0-9]{4}-W[0-9]{2}$')
@@ -32,10 +32,12 @@ service cloud.firestore {
     }
 
     match /weeks/{weekId} {
+      allow read: if true;
       allow create, update: if request.resource.data.keys().hasOnly(['year', 'week'])
         && validWeek(weekId, request.resource.data);
 
       match /sections/{sectionId} {
+        allow read: if true;
         allow create, update: if sectionId.matches('^[a-z0-9-]{1,50}$')
           && request.resource.data.keys().hasOnly(['sectionId', 'name', 'year', 'week'])
           && request.resource.data.sectionId == sectionId
@@ -45,6 +47,7 @@ service cloud.firestore {
           && validWeek(weekId, request.resource.data);
 
         match /responses/{responseId} {
+          allow read: if true;
           allow create: if request.resource.data.keys().hasOnly(['answers', 'createdAt'])
             && validAnswers(request.resource.data.answers)
             && request.resource.data.createdAt == request.time;

@@ -1,18 +1,12 @@
+@use '../styles/gradient' as *;
+
 $track-height: 0.75rem;
 $thumb-size: 1.75rem;
-$gradient: linear-gradient(
-  to right,
-  hsl(0 75% 50%),
-  hsl(30 85% 52%),
-  hsl(55 85% 48%),
-  hsl(90 65% 45%),
-  hsl(120 60% 40%)
-);
 
 @mixin track {
   height: $track-height;
   border-radius: 999px;
-  background: $gradient;
+  background: $score-gradient;
 }
 
 @mixin thumb {

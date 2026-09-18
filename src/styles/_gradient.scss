@@ -1,0 +1,9 @@
+// Gemensam skala: röd (0) → gul (50) → grön (100).
+$score-gradient: linear-gradient(
+  to right,
+  hsl(0 75% 50%),
+  hsl(30 85% 52%),
+  hsl(55 85% 48%),
+  hsl(90 65% 45%),
+  hsl(120 60% 40%)
+);
