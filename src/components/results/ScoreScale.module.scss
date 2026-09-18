@@ -20,37 +20,34 @@ $dot-size: 0.875rem;
   height: 0.625rem;
 }
 
-// Tonar ner delen av skalan som ligger utanför min–max.
-.dim {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  background: rgb(248 250 252 / 0.78);
+// --- Spannvy: neutral bana där bara min–max färgas ---
 
-  &.left {
-    left: 0;
-    border-radius: 999px 0 0 999px;
-  }
+$range-height: 1rem;
 
-  &.right {
-    right: 0;
-    border-radius: 0 999px 999px 0;
-  }
+.rangeScale {
+  position: relative;
+  padding: 1.6rem 0 1.4rem;
 }
 
-// Ram runt spannet min–max.
-.range {
-  position: absolute;
-  top: -3px;
-  bottom: -3px;
-  border: 2px solid rgb(15 23 42 / 0.55);
+.rangeTrack {
+  position: relative;
+  height: $range-height;
   border-radius: 999px;
-  min-width: 4px;
+  background: #f1f5f9;
+}
+
+// Hela gradienten, klippt till min–max så att färgerna stämmer mot skalan.
+.rangeFill {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  background: $score-gradient;
+  clip-path: inset(0 calc(100% - var(--max) * 1%) 0 calc(var(--min) * 1%) round 999px);
 }
 
 .edgeLabel {
   position: absolute;
-  top: calc(100% + 0.35rem);
+  top: calc(100% + 0.3rem);
   transform: translateX(-50%);
   font-size: 0.75rem;
   color: #64748b;
@@ -61,22 +58,22 @@ $dot-size: 0.875rem;
 .avgMarker {
   position: absolute;
   top: 50%;
-  width: 1.75rem;
-  height: 1.75rem;
+  width: 1.5rem;
+  height: 1.5rem;
   border-radius: 50%;
-  background: var(--marker-color);
-  border: 4px solid #fff;
-  box-shadow: 0 1px 4px rgb(15 23 42 / 0.4);
+  background: #fff;
+  border: 5px solid var(--marker-color);
+  box-shadow: 0 2px 6px rgb(15 23 42 / 0.25);
   transform: translate(-50%, -50%);
 }
 
 .avgLabel {
   position: absolute;
-  bottom: calc(100% + 0.4rem);
+  bottom: calc(100% + 0.45rem);
   transform: translateX(-50%);
   font-size: 0.75rem;
   font-weight: 600;
-  color: #0f172a;
+  color: #1e293b;
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }

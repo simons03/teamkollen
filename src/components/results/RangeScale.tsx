@@ -3,29 +3,27 @@ import { scoreColor } from '../../lib/color'
 import type { QuestionStats } from '../../lib/results'
 import styles from './ScoreScale.module.scss'
 
-/** Visar spannet min–max på en bred skala, med snittet markerat. */
+/** Neutral bana där bara spannet min–max färgas, med snittet som en ring. */
 export function RangeScale({ stats }: { stats: QuestionStats }) {
   const { min, max, avg } = stats
   const labelsOverlap = max - min < 14
 
   return (
-    <div className={styles.scale}>
-      <div className={styles.track}>
-        <div className={`${styles.dim} ${styles.left}`} style={{ width: `${min}%` }} />
-        <div className={`${styles.dim} ${styles.right}`} style={{ width: `${100 - max}%` }} />
-        <div className={styles.range} style={{ left: `${min}%`, width: `${max - min}%` }} />
+    <div className={styles.rangeScale}>
+      <div className={styles.rangeTrack}>
+        <div className={styles.rangeFill} style={{ '--min': min, '--max': max } as CSSProperties} />
 
         {labelsOverlap ? (
           <span className={styles.edgeLabel} style={{ left: `${(min + max) / 2}%` }}>
-            {min === max ? `Alla: ${min}` : `Lägst ${min} · Högst ${max}`}
+            {min === max ? min : `${min}–${max}`}
           </span>
         ) : (
           <>
-            <span className={styles.edgeLabel} style={{ left: `${min}%` }}>
-              Lägst {min}
+            <span className={styles.edgeLabel} style={{ left: `${min}%` }} title="Lägsta svar">
+              {min}
             </span>
-            <span className={styles.edgeLabel} style={{ left: `${max}%` }}>
-              Högst {max}
+            <span className={styles.edgeLabel} style={{ left: `${max}%` }} title="Högsta svar">
+              {max}
             </span>
           </>
         )}
